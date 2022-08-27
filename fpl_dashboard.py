@@ -13,7 +13,7 @@ if uploaded_file is not None:
     fpl_players_df = pd.read_csv(uploaded_file)
 else:
     filename = f'GW_{current_GW}'
-    filepath = Path(f'/Users/tungngo/WaveBoost Dropbox/Tung Ngo/Learning/Python3/FPL 2022-2023/db/{filename}.csv')
+    filepath = Path(f'db/{filename}.csv')
     fpl_players_df = pd.read_csv(filepath)
 fpl_players_df['xG_xA'] = fpl_players_df['xG'] + fpl_players_df['xA']
 
