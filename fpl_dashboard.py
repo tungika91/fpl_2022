@@ -423,11 +423,26 @@ with tab4:
         else:
           return_list.append(item)
 
+    # SCRAPE REASONS
+    for index, element in enumerate(table):
+        temp = []
+        reasons = element.select('tr td')
+        for reason in reasons:
+          #print(reason.text)
+          if 'Reason' in reason.text:
+            temp.append(reason.text.strip('Reason'))
+
+    reason_list = []
+    for item in temp:
+      if item != '':
+          reason_list.append(item)
+
 
     # CREATE DATAFRAME AS SUMMARY
     count = [i for i in range(sum(injury_count))]
     injury_df = pd.DataFrame({'Team': team_list, 
                               'Player': name_list,
+                              'Reason': reason_list,
                               'Status': status_list,
                               'Potential Return': return_list
                               }, index = count)
