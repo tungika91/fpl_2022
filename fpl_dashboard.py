@@ -434,4 +434,4 @@ with tab4:
     
     team = st.selectbox('Select team:',set(team_list),index = 0)
     st.subheader('List of injuries')
-    st.dataframe(injury_df.loc[injury_df['Team'] == team].sort_values(ascending=False))
+    st.dataframe(injury_df.loc[injury_df['Team'] == team])
