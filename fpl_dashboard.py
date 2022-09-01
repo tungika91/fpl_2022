@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import streamlit as st
 import altair as alt
+from bs4 import BeautifulSoup
+import requests
 
 st.header('Fantasy Premier League 2022-2023')
 
@@ -35,7 +37,7 @@ def min_playingTime(mid_df, playtime = 120):
     return mid_df['minutes'] >= playtime
 
 # Separate each position into individual tabs
-tab0, tab1, tab2, tab3 = st.tabs(['Goalkeepers', "Defenders", "Midfielders", "Forwards"])
+tab0, tab1, tab2, tab3, tab4 = st.tabs(['Goalkeepers', "Defenders", "Midfielders", "Forwards", "Injuries"])
 
 with tab0:
     # GOALKEEPERS
@@ -341,3 +343,93 @@ with tab3:
     with col3:
         max_cost = st.text_input('Maximum price:', 120)
     st.dataframe(fwd_df[['web_name', 'team_short','minutes','now_cost', 'total_points','form','xG_xA', 'xGChain', 'Avg_Difficulty', 'Difficulty', 'Opponents']].loc[is_Fixture_easy(fwd_df, float(dif)) & max_Cost(fwd_df, int(max_cost)) & min_playingTime(fwd_df, int(min_minutes))].sort_values('xG_xA', ascending=False))
+
+with tab4:
+    url = 'https://www.premierinjuries.com/injury-table.php' 
+    html = requests.get(url).text
+
+    soup = BeautifulSoup(html)
+    table = soup.select('table tbody')
+    
+    # SCRAPE INJURY COUNT AND TEAM NAME
+    for index, element in enumerate(table):
+        # Get injury count
+        injury_count = []
+        counts = element.select('th div div.table-actions div.injury-count2.injury-count-yes span')
+        for count in counts:
+            injury_count.append(int(count.text))
+
+        # Get team name
+        team_list = []
+        teams = element.select('th div div.injury-team')
+        for i,team in enumerate(teams):
+          for j in range(injury_count[i]):
+            team_list.append(team.text)
+
+    # SCRAPE STATUS
+    for index, element in enumerate(table):
+        temp = []
+        statuses = element.select('tr td')
+        for status in statuses:
+          #print(status.text)
+          if 'Status' in status.text:
+            temp.append(status.text.strip("'Status'"))
+
+    i = 0 # keep track of item in temp
+    j = 0 # keep track of count in injury_count
+
+    status_list = []
+    while i < len(temp):
+      if temp[i] == temp[0]:
+        i+=1
+      else:
+        for n in range(injury_count[j]):
+          if temp[i+n] == 'Ruled O':
+            status_list.append('Ruled Out')
+          else:
+            status_list.append(temp[i+n])
+        j+=1
+        i+=n+1
+
+    # body > div.elementor.elementor-995 > section.elementor-section.elementor-top-section.elementor-element.elementor-element-0de1ea7.elementor-section-full_width.elementor-section-height-default.elementor-section-height-default > div > div.elementor-column.elementor-col-33.elementor-top-column.elementor-element.elementor-element-84bc06d.pi-column-darkglass > div > div.elementor-element.elementor-element-389f88c.elementor-widget.elementor-widget-shortcode > div > div > div > table > tbody > tr:nth-child(3) > td:nth-child(1) > div
+    # SCRAPE PLAYER NAME
+    for index, element in enumerate(table):
+        temp = []
+        names = element.select('tr td')
+        for name in names:
+          #print(name.text)
+          if 'Player' in name.text:
+            temp.append(name.text.strip('Player'))
+    name_list = []
+    for item in temp:
+      if item != '':
+        name_list.append(item)
+
+    # body > div.elementor.elementor-995 > section.elementor-section.elementor-top-section.elementor-element.elementor-element-0de1ea7.elementor-section-full_width.elementor-section-height-default.elementor-section-height-default > div > div.elementor-column.elementor-col-33.elementor-top-column.elementor-element.elementor-element-84bc06d.pi-column-darkglass > div > div.elementor-element.elementor-element-389f88c.elementor-widget.elementor-widget-shortcode > div > div > div > table > tbody > tr:nth-child(3) > td:nth-child(1) > div
+    # SCRAPE POTENTIAL RETURN
+    for index, element in enumerate(table):
+        temp = []
+        dates = element.select('tr td')
+        for date in dates:
+          #print(name.text)
+          if 'Potential Return' in date.text:
+            temp.append(date.text.strip('Potential Return'))
+
+    return_list = []
+    for item in temp:
+      if item != '':
+        if item == 'No Return D':
+          return_list.append('No Return Date')
+        else:
+          return_list.append(item)
+
+
+    # CREATE DATAFRAME AS SUMMARY
+    count = [i for i in range(sum(injury_count))]
+    injury_df = pd.DataFrame({'Team': team_list, 
+                              'Player': name_list,
+                              'Status': status_list,
+                              'Potential Return': return_list
+                              }, index = count)
+    st.subheader('List of injuries')
+    st.table(injury_df)
