@@ -432,6 +432,6 @@ with tab4:
                               'Potential Return': return_list
                               }, index = count)
     
-    team = st.selectbox('Select team:',team_list,index = 0)
+    team = st.selectbox('Select team:',set(team_list),index = 0)
     st.subheader('List of injuries')
     st.dataframe(injury_df.loc[injury_df['Team'] == team])
