@@ -9,7 +9,7 @@ import requests
 
 st.header('Fantasy Premier League 2022-2023')
 
-current_GW = st.text_input('Enter Gameweek', 2)
+current_GW = st.text_input('Enter Gameweek', 5)
 uploaded_file = st.file_uploader("Choose a file")
 if uploaded_file is not None:
     fpl_players_df = pd.read_csv(uploaded_file)
